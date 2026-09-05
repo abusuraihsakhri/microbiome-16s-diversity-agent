@@ -1,7 +1,6 @@
 """
 Prometheus Operational Metrics Exporter for microbiome-16s-diversity-agent.
 """
-import time
 from typing import Dict, Any
 
 class SystemMetricsCollector:

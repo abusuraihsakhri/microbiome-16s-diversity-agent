@@ -5,7 +5,7 @@ Standard: CAP / CLSI / ISO Standards
 """
 import datetime
 from enum import Enum
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 
 

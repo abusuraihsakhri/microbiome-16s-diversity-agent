@@ -6,7 +6,7 @@ Standard: QIIME 2 / Earth Microbiome Standards
 import datetime
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 class ExecutionStatus(str, Enum):
