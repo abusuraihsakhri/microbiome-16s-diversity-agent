@@ -17,6 +17,7 @@ function show(result, table) {
   const bbody=$('beta').querySelector('tbody');result.beta.forEach((dist,i)=>{const tr=document.createElement('tr');cell(tr,result.sampleNames[i],true);for(const v of dist)cell(tr,fmt(v));bbody.append(tr);});
   $('export-alpha').disabled=false;$('export-beta').disabled=false;setStatus(`Calculated ${result.alpha.length} samples using ${table.features.length} features. No data left this browser.`);
 }
+$('csv-input').addEventListener('input',()=>{resetResults();setStatus('Input changed; select Analyze diversity.');});
 $('analyse').addEventListener('click',()=>{try{const t=parseTable($('csv-input').value);show(analyseTable(t),t);}catch(e){resetResults();setStatus(e.message,true);}});
 $('example').addEventListener('click',()=>{$('csv-input').value=EXAMPLE;$('csv-file').value='';resetResults();setStatus('Example loaded; select Analyze diversity.');});
 $('clear').addEventListener('click',()=>{$('csv-input').value='';$('csv-file').value='';resetResults();setStatus('Input cleared.');});
