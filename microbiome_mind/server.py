@@ -15,7 +15,7 @@ def create_app():
 
         app = FastAPI(
             title="MicrobiomeMind: Alpha & Beta Diversity (UniFrac / Shannon) Profiler Agent",
-            description="Computes Shannon entropy, Chao1 richness, Bray-Curtis dissimilarity, and Weighted UniFrac distance matrices from ASV/OTU abundance tables.",
+            description="Legacy threshold-based audit API. Descriptive alpha diversity and Bray-Curtis computation are available separately via microbiome_mind.diversity and the browser app; this API does not compute UniFrac.",
             version="2.0.0-FRONTIER",
         )
 

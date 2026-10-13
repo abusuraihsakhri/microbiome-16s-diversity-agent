@@ -1,0 +1,5 @@
+sample_id,ASV_1,ASV_2,ASV_3,ASV_4,ASV_5
+Control_1,40,30,20,10,0
+Control_2,45,25,20,10,0
+Treatment_1,5,5,20,30,40
+Treatment_2,10,0,15,35,40

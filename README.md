@@ -1,198 +1,79 @@
 # Microbiome 16S Diversity Agent
 
-> **Domain:** Clinical Decision Support & Biomedical Computing
-> **Reference Guidelines & Standards:** CAP / CLSI / ISO Standards, QIIME 2 / Earth Microbiome Standards
+A local-first research utility for descriptive alpha and beta diversity analysis of 16S amplicon **ASV/OTU read-count tables**. Includes a static browser application and a dependency-light Python calculation module, alongside the repository's pre-existing audit and API utilities.
 
-<div align="center">
+## Browser application
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+Open the site's `index.html` in a static web server, or use the GitHub Pages deployment once it is enabled. The application accepts pasted or uploaded CSV, displays per-sample diversity and a pairwise distance matrix, and exports both tables as CSV. No data is sent to an application server; calculations and downloads occur in the browser. There are no remote runtime dependencies.
 
-</div>
+The input is **samples in rows** and **ASVs/OTUs in columns**. The first column must be `sample_id`; counts must be nonnegative integers, and each sample must contain at least one read.
 
----
-
-## 📖 What It Does
-
-**Microbiome 16S Diversity Agent** is an advanced analytical and computational platform implementing Shannon entropy, Chao1 richness & Weighted UniFrac phylogenetic distance evaluation. It provides multi-worker consensus evaluation with tamper-evident audit logging and Zero-PHI outbound protection.
-
-The system consists of two main modules:
-
-- **`agents/`** - Enterprise clinical decision support with multi-worker evaluation, HMAC-SHA256 audit trail, and PHI guard
-- **`microbiome_mind/`** - Alpha & beta diversity profiler (UniFrac / Shannon) for biomedical scientific discovery
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds.
-- **Multi-Worker Consensus**: Three specialized workers (QC Invariant, Safety Escalation, Protocol Conformance) evaluate each task.
-- **Risk & Urgency Classification**: Multi-tier categorization (ROUTINE, ELEVATED_RISK, CRITICAL_STAT_PANIC) with automated recommendations.
-- **Validation & Guardrails**: Rigorous input bounds checking and anomaly detection.
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### Installation
-
-```bash
-pip install fastapi uvicorn pydantic pytest
+```csv
+sample_id,ASV_1,ASV_2,ASV_3
+Sample_A,12,8,0
+Sample_B,1,4,10
 ```
 
-### 1. Run Single Task Evaluation
+[Example dataset](example_counts.csv). The browser currently supports up to 100 samples, 500 features, and 3 MB per CSV.
+
+## Metrics and scope
+
+| Output | Definition |
+| --- | --- |
+| Observed richness | Number of features with nonzero counts |
+| Shannon | `-Σ pᵢ ln(pᵢ)` with natural logarithms |
+| Simpson | `1 - Σ pᵢ²` |
+| Chao1 | Bias-corrected `S_obs + f₁(f₁ − 1) / [2(f₂ + 1)]` |
+| Pielou evenness | Shannon / ln(observed richness), 0 for richness ≤ 1 |
+| Bray–Curtis | Half the sum of absolute differences of sample **relative abundances** |
+
+These are descriptive metrics; sequencing depth and preprocessing choices affect interpretation. **Weighted/unweighted UniFrac is not implemented**, because a phylogenetic tree is required. **PERMANOVA, rarefaction, significance testing, and clinical decision support are not implemented** in the diversity calculator. The existing threshold-based `agents/` and `microbiome_mind/` audit paths are preserved for compatibility but must not be confused with phylogenetic diversity or clinical validation.
+
+## Python installation and CLI
+
+Python 3.10+ is required. From the repository root:
+
 ```bash
-python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
+python -m pip install -e '.[server,test]'
+python -m diversity_cli example_counts.csv --alpha alpha.csv --beta beta.csv
+# or after installation:
+microbiome-diversity example_counts.csv --alpha alpha.csv --beta beta.csv
 ```
 
-### 2. Interactive Chat Query
-```bash
-python cli.py chat "What is the system status?"
-```
+The diversity calculation uses the Python standard library; the package also installs Pydantic for its existing audit command. Use `pip install -e .` if FastAPI and pytest are not needed.
 
-### 3. Batch Process CSV Records
+The original audit functionality remains available:
+
 ```bash
+python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5
 python cli.py batch -i sample.csv -o results.csv
-```
-
-### 4. Verify Audit Trail Integrity
-```bash
 python cli.py verify-audit
-```
-
-### 5. Launch REST API Server
-```bash
 python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### Parameter Reference
+These audit inputs are **generic numeric thresholds**, not microbiome diversity indices. The FastAPI endpoints (`/health`, `/metrics`, `/api/audit`, `/api/chat`, `/api/audit/logs`) are separate from the static browser calculator. The `/metrics` endpoint returns JSON, not Prometheus exposition text. `/api/chat` uses a deterministic mock response, not a remote model. Do not submit patient-identifiable information; regex-based screening does not guarantee de-identification.
 
-| Parameter | Type | Default | Description |
-|:----------|:-----|:--------|:------------|
-| `--task-id` | string | TASK-2026-001 | Unique task / case identifier |
-| `--target` | string | KEY-TARGET-01 | Entity, patient key, or genomic target |
-| `--primary` | float | 28.5 | Primary domain measurement or score |
-| `--secondary` | float | 14.2 | Secondary kinetic or confidence score |
-| `--critical` | flag | False | Emergency escalation or high priority trigger |
-| `--status` | string | DISCORDANT | Status code or phenotype descriptor |
-| `-i / --input` | path | required | Input CSV file path for batch processing |
-| `-o / --output` | path | results.csv | Output CSV file path for batch processing |
-
-### Input Data Schema (CSV Batch Mode)
-
-| Field | Type | Required | Description |
-|:------|:-----|:---------|:------------|
-| `task_id` | string | Yes | Unique task identifier |
-| `target_identifier` | string | Yes | Target entity key |
-| `primary_metric` | float | Yes | Primary measurement value |
-| `secondary_metric` | float | Yes | Secondary measurement value |
-| `is_critical_flag` | boolean | No | Critical escalation flag (true/false/1/0/yes) |
-| `status_descriptor` | string | No | Status descriptor (NOMINAL, DISCORDANT, ANOMALY, etc.) |
-
----
-
-## 🛡️ Security & Enterprise Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOBs, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation. Integrity verified by re-computing HMAC signatures.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
-
-### Environment Variables
-
-| Variable | Description | Default |
-|:---------|:------------|:--------|
-| `AUDIT_SECRET_KEY` | Secret key for HMAC-SHA256 audit signing | Random per-session (set for production) |
-| `MODEL_PROVIDER` | LLM provider (mock, ollama, claude, openai) | mock |
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+## Testing and deployment
 
 ```bash
-pytest -v
+python -m pytest -q
+node --test web/diversity.test.mjs
+node --check web/app.mjs
+node --check web/diversity.mjs
+python -m http.server 8001
 ```
 
-Execute high-throughput batch simulation benchmarks:
+Then visit `http://127.0.0.1:8001/` for the static UI. Node.js 22 is used by CI tests, but no Node dependencies are required for running the app. CI runs Python 3.10–3.12 tests and Node tests. The GitHub Pages workflow packages only the static `index.html` and `web/` assets when changes are pushed to `master`.
+
+Docker runs the existing FastAPI service, **not** the GitHub Pages app:
 
 ```bash
-python simulator.py 1000
+docker build -t microbiome-16s .
+docker run -p 127.0.0.1:8000:8000 microbiome-16s
 ```
 
-Run security audit:
+## Privacy, compatibility, and license
 
-```bash
-python -c "from agents.base import AuditLogger; assert AuditLogger.verify_integrity(); print('Security Audit Passed!')"
-```
+Browser analysis is client-side and does not need accounts, cookies, network APIs, or external fonts. Exports are initiated locally; spreadsheet-formula-leading sample IDs are escaped in exported CSV. Modern browsers supporting JavaScript modules and `File.text()` are required. Static Pages cannot host the Python API or run server-side Python. Existing audit logs are in-memory and not a production-compliant patient record system.
 
----
-
-## 🐳 Container Deployment
-
-```bash
-docker build -t microbiome-16s-diversity-agent .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secure-key microbiome-16s-diversity-agent
-```
-
-Or using Docker Compose:
-
-```bash
-echo "AUDIT_SECRET_KEY=your-secure-key" > .env
-docker-compose up -d
-```
-
-### REST API Endpoints
-
-| Endpoint | Method | Description |
-|:---------|:-------|:------------|
-| `/health` | GET | Health check |
-| `/metrics` | GET | Prometheus-compatible metrics |
-| `/api/audit` | POST | Submit task for evaluation |
-| `/api/chat` | POST | Query supervisory chat |
-| `/api/audit/logs` | GET | Retrieve audit trail |
-
----
-
-## 📁 Project Structure
-
-```
-microbiome-16s-diversity-agent/
-├── agents/                    # Enterprise clinical decision support
-│   ├── __init__.py
-│   ├── api.py                 # FastAPI REST server
-│   ├── base.py                # PHI guard, HMAC audit trail
-│   ├── learning.py            # Bayesian calibration engine
-│   ├── llm_factory.py         # LLM provider factory
-│   ├── metrics.py             # Prometheus metrics collector
-│   ├── models.py              # Pydantic data models
-│   ├── streamer.py            # WebSocket telemetry broadcaster
-│   ├── supervisor.py          # Multi-worker orchestrator
-│   └── workers.py             # Specialized evaluation workers
-├── microbiome_mind/           # Alpha & beta diversity profiler
-│   ├── __init__.py
-│   ├── agents.py              # Sub-agents & coordinator
-│   ├── cli.py                 # CLI entry point
-│   ├── engine.py              # Core algorithmic engine
-│   ├── models.py              # Data models
-│   └── server.py              # FastAPI server factory
-├── tests/                     # Automated test suite
-├── cli.py                     # Main CLI entry point
-├── simulator.py               # High-throughput stress testing
-├── enrichment.py              # Feature enrichment engines
-├── Dockerfile                 # Container build
-├── docker-compose.yml         # Multi-service orchestration
-├── pyproject.toml             # Package configuration
-└── README.md                  # This file
-```
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
+Licensed under the [MIT License](LICENSE).
