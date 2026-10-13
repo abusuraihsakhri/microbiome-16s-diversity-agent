@@ -1,9 +1,12 @@
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 results.csv
 output.csv
+alpha_diversity.csv
+bray_curtis.csv
 *.log
 dist/
 build/
